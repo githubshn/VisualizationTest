@@ -178,7 +178,7 @@
         for(i=1;i<=clickButtonNum;i++){
             if(movable[i]){
                 context.strokeRect(clickButtonX[i],clickButtonY[i],50,20);
-                context.fillText("click",clickButtonX[i]+10,clickButtonY[i]+15,2000);
+                context.fillText("check",clickButtonX[i]+8,clickButtonY[i]+15,2000);
             }
         }
 
@@ -186,7 +186,7 @@
         var t1 = 40;
         context.fillText("Case 1:  Drag the violet square to form a square which has the same area as the example on the left",20,t1,2000);
         context.fillText("one point has already been chosen, you only have to decide where the opposite point should be and thus form the square",20,t1+15,2000);
-        context.fillText("try three times and you will get the average score. When you finish, click on finish to see the inaccuracy",20,t1+30,2000);
+        context.fillText("try three times and you will get the average score. When you finish, click on 'check' to see the inaccuracy",20,t1+30,2000);
         context.strokeStyle = 'black';
         context.lineWidth = 2;
         context.strokeRect(20,100,70,70);//example
