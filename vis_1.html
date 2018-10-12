@@ -1,0 +1,435 @@
+<body>
+    <canvas id = "canvas" width="1000" height="2000" 
+    onmousedown="mouseDown(event)"
+    onmousemove="mouseMove(event)" 
+    onmouseup="mouseUp(event)"></canvas>
+
+<script>
+    var canvas = document.getElementById("canvas");
+    var context = canvas.getContext('2d');
+
+    var isDown = 0;
+    var clickDown = 0;
+    var isCheck = false;
+    var movable = new Array(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1);
+    var mouseX,mouseY;
+    var dcount = 18;
+    var dx = new Array(0,  250,450,650,  280,480,680,  300,500,700,   20,120,220,330,520,   50, 350,   100,  100);
+    var dy = new Array(0,  150,150,150,  350,350,350,  600,600,600,  750,750,750,750,750,  950, 950,  1320, 1500);
+    var dr = new Array(0,  10 ,10 , 10,   10, 10, 10,   10, 10, 10,   10, 10, 10, 10, 10,   10,  10,    10,   10);
+    var clickButtonNum = 12;
+    var clickButtonX = new Array(0, 200,400,600,  200,400,600,  200,400,600,  850,   750,   600);
+    var clickButtonY = new Array(0, 200,200,200,  400,400,400,  650,650,650,  800,  1000,  1300);
+    var inaccuracy1,inaccuracy2,inaccuracy3,inaccuracy4,inaccuracy5,inaccuracy6;
+
+
+    function getmouse(e){
+        var bounding = canvas.getBoundingClientRect();
+        mouseX = (e.clientX - bounding.left) * (canvas.width/bounding.width);
+        mouseY = (e.clientY - bounding.top) * (canvas.height/bounding.height);
+    }
+
+
+    function drawSq(_context,_r,_x,_y){
+        _context.strokeStyle='violet';
+        _context.lineWidth = 2;
+        _context.strokeRect(_x-_r,_y-_r,_r*2,_r*2);
+    }
+
+    function drawSph(_context,_x,_y,_r){
+        _context.beginPath();
+            _context.arc(_x,_y,_r,0,Math.PI*2,1);
+        _context.closePath();
+    }
+
+    function drawTri(_context,_x,_y,_a,_h,_b){
+        _context.beginPath();
+            _context.moveTo(_x,_y);
+            _context.lineTo(_x+_a,_y);
+            _context.lineTo(_x+_a-_b,_y+_h);
+        _context.closePath();
+    }
+
+    function drawAng(_context,_x,_y,_r,_theta){
+        _context.beginPath();
+            _context.moveTo(_x,_y);
+            _context.lineTo(_x+_r,_y);
+            _context.arc(_x,_y,_r,0,-_theta,1);
+        _context.closePath();
+    }
+
+    function caseDrawSq(_context,_x,_y,_n){
+        drawSph(_context,_x,_y,3);
+        _context.fillStyle = "black";
+        _context.fill();//fixed point1
+
+        _context.beginPath();
+            _context.moveTo(_x,_y);
+            _context.lineTo(dx[_n],_y);
+            _context.lineTo(dx[_n],dy[_n]);
+            _context.lineTo(_x,dy[_n]);
+        _context.closePath();
+        _context.lineWidth = 2;
+        _context.strokeStyle = "blue"
+        _context.stroke();//square1
+    }
+
+    function caseDrawSph(_context,_x,_y,_n){
+        drawSph(_context,_x,_y,3);
+        _context.fillStyle = "black";
+        _context.fill();//center
+
+        var r = Math.sqrt(Math.pow(_x-dx[_n],2)+Math.pow(_y-dy[_n],2));
+        drawSph(_context,_x,_y,r);
+        _context.lineWidth = 2;
+        _context.strokeStyle = "blue"
+        _context.stroke();//sphere
+    }
+
+    function caseDrawRect(_context,_x,_y,_w,_h){
+        _context.strokeStyle = 'black';
+        _context.strokeRect(_x,_y,_w,_h);
+    }
+
+    function caseDrawAng(_context,_x,_y,_r,_theta){
+        var theta = _theta/180*Math.PI;
+        _context.strokeStyle = 'black';
+        drawAng(_context,_x,_y,_r,theta);
+        _context.stroke();
+    }
+
+    
+
+    function judgeCase1(){
+        var err = new Array(0,0,0,0);
+        for(i=1;i<=3;i++){
+            err[i] = Math.sqrt(Math.pow((dx[i]-200*i-70),2)+Math.pow((dy[i]-100-70),2));
+            err[0] += Math.abs(err[i])/3;
+        }
+        return(err);
+    }
+
+    function judgeCase2(){
+        var err = new Array(0,0,0,0);
+        var sl = 70*Math.SQRT1_2;//supposedlength;
+        for(i=1;i<=3;i++){
+            err[i] = Math.sqrt(Math.pow((dx[i+3]-200*i-sl),2)+Math.pow((dy[i+3]-300-sl),2));
+            err[0] += Math.abs(err[i])/3;
+        }
+        return(err);
+    }
+
+    function judgeCase3(){
+        var err = new Array(0,0,0,0);
+        var sl = Math.sqrt(70*70/Math.PI);//supposedlength;
+        for(i=1;i<=3;i++){
+            err[i] = Math.sqrt(Math.pow((dx[i+6]-200*i-50),2)+Math.pow((dy[i+6]-550),2))-sl;
+            err[0] += Math.abs(err[i])/3;
+        }
+        return(err);
+    }
+
+    function judgeCase4(){
+        var ord = new Array(0,2,3,4,1,5);
+        var ina = 0;
+        for(i=1;i<=4;i++){
+            for(j=i+1;j<=5;j++){
+                if((dx[i+9]<dx[j+9]&&ord[i]>ord[j])||(dx[i+9]>dx[j+9]&&ord[i]<ord[j])){
+                    ina++;
+                }
+            }
+        }
+        return ina;
+    }
+
+    function judgeCase5(){
+        var ina = 0;
+        if(!((dx[15]>=150&&dx[15]<=150+30)&&(dy[15]>=950&&dy[15]<=950+190))){
+            ina++;
+        }
+        if(!((dx[16]>=350&&dx[16]<=350+250)&&(dy[16]>=990&&dy[16]<=990+32))){
+            ina++;
+        }
+        return ina;
+    }
+
+    function judgeCase6(){
+        var err = 0;
+        var dis = Math.sqrt(Math.pow(dx[17]-400,2)+Math.pow(dy[17]-1320,2));
+        if(dis>50)err++;
+        return err;
+    }
+
+    function judgeCase7(){
+        if(dx[18]>=200&&dx[18]<=400&&dy[18]>=1450&&dy[18]<=1550){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    
+
+
+
+    function repaint(){
+        context.clearRect(0,0,1000,2000);
+        context.strokeStyle = 'black';
+        for(i=1;i<=clickButtonNum;i++){
+            if(movable[i]){
+                context.strokeRect(clickButtonX[i],clickButtonY[i],50,20);
+                context.fillText("click",clickButtonX[i]+10,clickButtonY[i]+15,2000);
+            }
+        }
+
+        context.font = "bold 14px  黑体";
+        var t1 = 40;
+        context.fillText("Case 1:  Drag the violet square to form a square which has the same area as the example on the left",20,t1,2000);
+        context.fillText("one point has already been chosen, you only have to decide where the opposite point should be and thus form the square",20,t1+15,2000);
+        context.fillText("try three times and you will get the average score. When you finish, click on finish to see the inaccuracy",20,t1+30,2000);
+        context.strokeStyle = 'black';
+        context.lineWidth = 2;
+        context.strokeRect(20,100,70,70);//example
+        caseDrawSq(context,200,100,1);
+        caseDrawSq(context,400,100,2);
+        caseDrawSq(context,600,100,3);
+
+        inaccuracy1 = judgeCase1();
+        
+        for(i=0;i<=3;i++){
+            inaccuracy1[i] = inaccuracy1[i].toFixed(4);
+            if(i!=0&&!movable[i])context.fillText("inaccuracy:"+inaccuracy1[i],200*i,200,2000);
+        }
+        
+
+        context.font = "bold 14px  黑体";
+        var t2 = 260;
+        context.fillText("Case 2:  Again please form the square but this time, the area should be half of the size of the example",20,t2,2000);
+        context.fillText("It is half of the area but not quarter, so be careful",20,t2+15,2000);
+        context.strokeStyle = 'black';
+        context.lineWidth = 2;
+        context.strokeRect(20,300,70,70);
+        caseDrawSq(context,200,300,4);
+        caseDrawSq(context,400,300,5);
+        caseDrawSq(context,600,300,6);
+
+        inaccuracy2 = judgeCase2();
+
+        
+        for(i=0;i<=3;i++){
+            inaccuracy2[i] = inaccuracy2[i].toFixed(4);
+            if(i!=0&&!movable[i+3])context.fillText("inaccuracy:"+inaccuracy2[i],200*i,400,2000);
+        }
+        
+
+        context.font = "bold 14px  黑体";
+        var t3 = 460;
+        context.fillText("Case 3:  This time you are going to form a circle. Again the area should be the same as the example,though the example is a square!",20,t3,2000);
+        context.fillText("This will be extremely difficult, so the inaccuracy would be much more larger than before.",20,t3+15,2000);
+        context.strokeStyle = 'black';
+        context.lineWidth = 2;
+        context.strokeRect(20,500,70,70);
+        caseDrawSph(context,250,550,7);
+        caseDrawSph(context,450,550,8);
+        caseDrawSph(context,650,550,9);
+
+        inaccuracy3 = judgeCase3();
+        for(i=0;i<=3;i++){
+            inaccuracy3[i] = inaccuracy3[i].toFixed(4);
+            if(i!=0&&!movable[i+6])context.fillText("inaccuracy:"+inaccuracy3[i],50+200*i,650,2000);
+        }
+        
+
+        context.font = "bold 14px  黑体";
+        var t4 = 700;
+        context.fillText("Case 4:  This case is still about area. However, this time you only have to find which one is larger.",20,t4,2000);
+        context.fillText("Even though, it probably won't be as that easy as you think.",20,t4+15,2000);
+        context.fillText("Drag the violet squares to the line under in order of the area of the shapes they represent. The smallest should be on the very left.",20,t4+30,2000);
+        context.strokeStyle = 'black';
+        context.lineWidth = 2;
+        context.strokeRect(20,750,70,70); //area is 4900
+        context.strokeRect(120,750,75,70);//area is 5250
+        context.strokeRect(220,750,90,60);//area is 5400
+
+        drawTri(context,330,750,160,60,80);
+        context.stroke();//4800
+
+        drawTri(context,520,750,180,70,-60);
+        context.stroke();//6300
+
+        var fx = new Array(0,20,120,220,330,520);
+        context.strokeStyle = 'violet';
+        context.lineWidth = 1;
+        for(i=1;i<=5;i++){
+            context.beginPath();
+                context.moveTo(fx[i],750);
+                context.lineTo(dx[i+9],dy[i+9]);
+            context.closePath();
+            context.stroke();
+        }
+
+        context.strokeStyle = "black";
+        context.lineWidth = 2;
+        context.beginPath();
+            context.moveTo(20,850);
+            context.lineTo(820,850);
+        context.closePath();
+        context.stroke();
+
+        inaccuracy4 = judgeCase4();
+        if(!movable[10]){
+            context.fillText("inaccuracy = "+inaccuracy4+"/10",100,835,2000);
+        }
+
+
+        context.font = "bold 14px  黑体";
+        var t5 = 900;
+        context.fillText("Case 5:  Probably you have learn that using area to represent the order or distinguish different things from each other is not a good idea",20,t5,2000);
+        context.fillText("So let us try some other ways, ways that more acceptable",20,t5+15,2000);
+        context.fillText("Try to find the longest or the highest. Put the violet square into them and you will get the score",20,t5+30,2000);
+        context.fillText("group 1:",20,t5+45,2000);
+        caseDrawRect(context, 50,950,30,170);
+        caseDrawRect(context,100,950,30,175);
+        caseDrawRect(context,150,950,30,190);
+        caseDrawRect(context,200,950,30,185);
+        caseDrawRect(context,250,950,30,180);
+        context.fillText("group 2:",350,t5+45,2000);
+        var int2 = 40;
+        caseDrawRect(context,350, 950 + int2*0,230,int2*0.8);
+        caseDrawRect(context,350, 950 + int2*1,250,int2*0.8);
+        caseDrawRect(context,350, 950 + int2*2,235,int2*0.8);
+        caseDrawRect(context,350, 950 + int2*3,245,int2*0.8);
+        caseDrawRect(context,350, 950 + int2*4,240,int2*0.8);
+
+        inaccuracy5 = judgeCase5();
+        if(!movable[11]){
+            context.fillText("inaccuracy = "+inaccuracy5,100,1200,2000);
+        }
+
+
+        context.font = "bold 14px  黑体";
+        var t6 = 1230;
+        context.fillText("Believing that Case 5 is very easy to you. Now is Case 6, the last one, little harder than Case 5. Wish you a good ending.",20,t6,2000);
+        context.fillText("Find the largest angle and drag the violet square into it!",20,t6+15,2000);
+        caseDrawAng(context,100,1320,50,45);
+        caseDrawAng(context,200,1320,50,65);
+        caseDrawAng(context,300,1320,50,90);
+        caseDrawAng(context,400,1320,50,135);
+        caseDrawAng(context,500,1320,50,120);
+
+        inaccuracy6 = judgeCase6();
+
+        if(!movable[12]){
+            context.fillText("inaccuracy = "+inaccuracy6,100,1345,2000);
+        }
+
+        context.font = "bold 14px  黑体";
+        var t7 = 1400;
+        context.fillText("Congratulations! You have finished all the Cases.",20,t7,2000);
+        context.fillText("Put the violet square into the 'check' button and you will see the result just under each case and a total one at the bottom",20,t7+15,2000);
+        
+        context.strokeStyle = 'black';
+        context.lineWidth = 2;
+        context.strokeRect(200,1450,200,100);
+        context.font = "bold 40px  黑体";
+        context.fillText("check",300-50,1510,2000);
+        isCheck = judgeCase7();
+
+
+        context.font = "bold 14px  黑体";       
+        var t8 = 1600;
+        if(isCheck){
+            context.strokeRect(10,t8-20,900,300);
+            context.fillText("Result:",20,t8,2000);
+            context.fillText("Case:",20,t8+30,2000);
+            context.fillText("Inaccuracy:",20,t8+60,2000);
+
+            for(i=1;i<=6;i++){
+                context.fillText("#"+i,100+i*100,t8+30,2000);
+            }
+            var rs = 30;
+            context.fillText(""+inaccuracy1[0],150+rs,t8+60,2000);
+            context.fillText(""+inaccuracy2[0],250+rs,t8+60,2000);
+            context.fillText(""+inaccuracy3[0],350+rs,t8+60,2000);
+            context.fillText(""+inaccuracy4,450+rs+20,t8+60,2000);
+            context.fillText(""+inaccuracy5,550+rs+20,t8+60,2000);
+            context.fillText(""+inaccuracy6,650+rs+20,t8+60,2000);
+        }
+
+        if(isCheck){
+            context.fillText("Details for 1 to 4:",20,t8+145,2000);
+            for(i=0;i<=3;i++){
+                //inaccuracy1[i] = inaccuracy1[i].toFixed(4);
+                context.fillText(""+inaccuracy1[i],200+200*i,t8+100,2000);
+            }
+            for(i=0;i<=3;i++){
+                //inaccuracy2[i] = inaccuracy2[i].toFixed(4);
+                context.fillText(""+inaccuracy2[i],200+200*i,t8+130,2000);
+            }
+            for(i=0;i<=3;i++){
+                //inaccuracy3[i] = inaccuracy3[i].toFixed(4);
+                context.fillText(""+inaccuracy3[i],200+200*i,t8+160,2000);
+            }
+            var ord = new Array(1,1,1,1,1,1);
+            for(i=1;i<=5;i++){
+                for(j=1;j<=5;j++){
+                    if(dx[i+9]>dx[j+9]){
+                        ord[i]++;
+                    }
+                }
+            }
+            for(i=1;i<=5;i++){
+                context.fillText(""+ord[i],200+i*10,t8+190,2000);
+            }
+        }
+        
+        
+
+
+        //context.fillText("isCheck="+isCheck+"mousex="+mouseX+"mousey="+mouseY,600,550,2000);
+
+        //context.fillText("dx="+boundi,100,230,200);
+        for(i=1;i<=dcount;i++){
+            drawSq(context,dr[i],dx[i],dy[i]);
+        }
+    }
+
+
+    
+    function mouseDown(e) {
+        getmouse(e);         
+        for(i=1;i<=clickButtonNum;i++){
+            if(mouseX>=clickButtonX[i]&&mouseX<=clickButtonX[i]+50&&mouseY>=clickButtonY[i]&&mouseY<=clickButtonY[i]+30){
+                clickDown = i;
+            }
+        }
+        for(i=1;i<=dcount;i++){
+            if((mouseX>=dx[i]-dr[i]&&mouseX<=dx[i]+dr[i])&&(mouseY>=dy[i]-dr[i]&&mouseY<=dy[i]+dr[i])){
+                isDown = i;
+            }
+        }
+        repaint();
+    }
+
+    function mouseMove(e) {
+        getmouse(e);
+        if(!isCheck&&movable[isDown]){
+            dx[isDown] = mouseX;
+            dy[isDown] = mouseY;
+        }
+        repaint();
+    }
+
+    function mouseUp(e) {
+        getmouse(e);
+        if(mouseX>=clickButtonX[clickDown]&&mouseX<=clickButtonX[clickDown]+50&&mouseY>=clickButtonY[clickDown]&&mouseY<=clickButtonY[clickDown]+30){
+            movable[clickDown] = 0;
+        }
+        isDown = 0;
+        repaint();
+    }
+
+
+</script>
+<span id="span1"></span><span id="span2"></span>
+</body>
